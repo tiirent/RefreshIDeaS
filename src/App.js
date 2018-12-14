@@ -6,42 +6,12 @@ import './App.css';
 
 class App extends Component {
 
-  getBeverages() {
-    var drinks = fire.database().ref("beverages").orderByKey();
-    drinks.once("value")
-      .then(function(snapshot) {
-        snapshot.forEach(function(childSnapshot) {
-          var key = childSnapshot.key;
-          var childData = childSnapshot.val();
-          alert(key);
-        })
-      })
-    return (
-      <div className = "beverages">
-        <Beverage
-          name = {"Coke"}
-          status = {"cokeStatus"}/>
-        <Beverage
-          name = {"Diet Coke"}
-          status = {"dietCokeStatus"}/>
-        <Beverage
-          name = {"Diet Mtn Dew"}
-          status = {"dietMtnDewStatus"}/>
-        <Beverage
-          name = {"Orange La Croix"}
-          status = {"orangeLaCroixStatus"}/>
-        <Beverage
-          name = {"Lime La Croix"}
-          status = {"limeLaCroixStatus"}/>
-        <Beverage
-          name = {"Fresca"}
-          status = {"frescaStatus"}/>
-      </div>
-    );
-  }
-  addMessage(e) {
-    e.preventDefault();
-    fire.database().ref()
+  constructor(props) {
+    super(props);
+
+    this.state = {beverages: []};
+
+    this.getData = this.getData.bind(this);
   }
 
   render() {
@@ -50,9 +20,44 @@ class App extends Component {
         <img src={logo} className="App-logo" alt="logo" align="top" />
         <header className="App-body">
           {this.getBeverages()}
+          <label className = "Suggestions">Suggestions</label>
+          <input type = "text" name = "suggestion"/>
           <button className = "Submit">Submit</button>
         </header>
       </form>
+    );
+  }
+
+  getData() {
+    var drinks = fire.database().ref("beverages").orderByKey();
+    var beverageList = [];
+    drinks.once("value", (snapshot) => {
+      snapshot.forEach(function(childSnapshot) {
+        var name;
+        var vote;
+        childSnapshot.forEach(function(grandchildSnapshot) {
+          if (grandchildSnapshot.key == "name") {
+            name = grandchildSnapshot.val();
+          } else {
+            vote = grandchildSnapshot.val();
+          }
+        });
+        let bvg = {title: name, votes: vote};
+        beverageList.push(bvg);
+      });
+      this.setState({beverages: beverageList});
+    });
+  }
+
+  componentDidMount() {
+    this.getData();
+  }
+
+  getBeverages() {
+    return (
+      <div className = "beverages">
+        {this.state.beverages.map(beverage => <Beverage name = {beverage.title} votes = {beverage.votes}/>)}
+      </div>
     );
   }
 }
